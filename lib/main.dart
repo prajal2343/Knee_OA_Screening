@@ -1,10 +1,13 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:video_player/video_player.dart';
 
 List<CameraDescription> cameras = [];
+
+const String apiBaseUrl = 'http://10.123.133.160:8000';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,7 +40,7 @@ class KneeOAScreeningApp extends StatelessWidget {
 }
 
 // ===============================================================
-// DASHBOARD SCREEN
+// DASHBOARD
 // ===============================================================
 
 class DashboardScreen extends StatelessWidget {
@@ -107,119 +110,44 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (constraints.maxWidth >= 900) {
-                  return Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          'Total Screenings',
-                          '128',
-                          Icons.people,
-                          Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatCard(
-                          'High Risk',
-                          '18',
-                          Icons.warning,
-                          Colors.red,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Moderate Risk',
-                          '42',
-                          Icons.info,
-                          Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildStatCard(
-                          'Low Risk',
-                          '68',
-                          Icons.check_circle,
-                          Colors.green,
-                        ),
-                      ),
-                    ],
-                  );
-                }
+            _statCard('Total Screenings', '128', Icons.people, Colors.blue),
 
-                if (constraints.maxWidth >= 600) {
-                  return GridView.count(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    children: [
-                      _buildStatCard(
-                        'Total Screenings',
-                        '128',
-                        Icons.people,
-                        Colors.blue,
-                      ),
-                      _buildStatCard(
-                        'High Risk',
-                        '18',
-                        Icons.warning,
-                        Colors.red,
-                      ),
-                      _buildStatCard(
-                        'Moderate Risk',
-                        '42',
-                        Icons.info,
-                        Colors.orange,
-                      ),
-                      _buildStatCard(
-                        'Low Risk',
-                        '68',
-                        Icons.check_circle,
-                        Colors.green,
-                      ),
-                    ],
-                  );
-                }
+            const SizedBox(height: 12),
 
-                return Column(
-                  children: [
-                    _buildStatCard(
-                      'Total Screenings',
-                      '128',
-                      Icons.people,
-                      Colors.blue,
+            // =====================================================
+            // TOTAL SCREENINGS / PATIENT DATA BUTTON
+            // =====================================================
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TotalScreeningsScreen(),
                     ),
-                    const SizedBox(height: 12),
-                    _buildStatCard(
-                      'High Risk',
-                      '18',
-                      Icons.warning,
-                      Colors.red,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatCard(
-                      'Moderate Risk',
-                      '42',
-                      Icons.info,
-                      Colors.orange,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatCard(
-                      'Low Risk',
-                      '68',
-                      Icons.check_circle,
-                      Colors.green,
-                    ),
-                  ],
-                );
-              },
+                  );
+                },
+                icon: const Icon(Icons.people_alt_outlined, size: 26),
+                label: const Text(
+                  'View All Patient Data',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
+
+            const SizedBox(height: 12),
+
+            _statCard('High Risk', '18', Icons.warning, Colors.red),
+
+            const SizedBox(height: 12),
+
+            _statCard('Moderate Risk', '42', Icons.info, Colors.orange),
+
+            const SizedBox(height: 12),
+
+            _statCard('Low Risk', '68', Icons.check_circle, Colors.green),
 
             const SizedBox(height: 24),
 
@@ -231,13 +159,38 @@ class DashboardScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const PatientRegistrationScreen(),
+                      builder: (_) => const PatientRegistrationScreen(),
                     ),
                   );
                 },
-                icon: const Icon(Icons.add_circle_outline, size: 28),
+                icon: const Icon(Icons.add_circle_outline),
                 label: const Text(
                   'Start New Screening',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // =====================================================
+            // SAVED VIDEOS BUTTON
+            // =====================================================
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SavedVideosScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.video_library, size: 28),
+                label: const Text(
+                  'Saved Videos',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -252,7 +205,7 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            _buildPatientCard(
+            _patientCard(
               'Patient 001',
               'Age 54 • Female',
               'High Risk',
@@ -261,7 +214,7 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildPatientCard(
+            _patientCard(
               'Patient 002',
               'Age 47 • Male',
               'Moderate Risk',
@@ -270,7 +223,7 @@ class DashboardScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildPatientCard(
+            _patientCard(
               'Patient 003',
               'Age 61 • Female',
               'Low Risk',
@@ -284,7 +237,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
+  static Widget _statCard(
     String title,
     String value,
     IconData icon,
@@ -304,27 +257,30 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, size: 32, color: color),
-          const SizedBox(height: 12),
+          Icon(icon, size: 36, color: color),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
           Text(
             value,
             style: TextStyle(
-              fontSize: 30,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[700])),
         ],
       ),
     );
   }
 
-  Widget _buildPatientCard(
+  static Widget _patientCard(
     String name,
     String details,
     String risk,
@@ -356,18 +312,9 @@ class DashboardScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(
-                  details,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
+                Text(details, style: TextStyle(color: Colors.grey[600])),
               ],
             ),
           ),
@@ -379,14 +326,756 @@ class DashboardScreen extends StatelessWidget {
             ),
             child: Text(
               risk,
-              style: TextStyle(
-                color: riskColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: riskColor, fontWeight: FontWeight.bold),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ===============================================================
+// TOTAL SCREENINGS / PATIENT DATA
+// ===============================================================
+
+class TotalScreeningsScreen extends StatefulWidget {
+  const TotalScreeningsScreen({super.key});
+
+  @override
+  State<TotalScreeningsScreen> createState() => _TotalScreeningsScreenState();
+}
+
+class _TotalScreeningsScreenState extends State<TotalScreeningsScreen> {
+  List<Map<String, dynamic>> patients = [];
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPatients();
+  }
+
+  Future<void> fetchPatients() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('$apiBaseUrl/patients'));
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map<String, dynamic>) {
+          final dynamic patientData = decoded['patients'];
+
+          if (patientData is List) {
+            setState(() {
+              patients = patientData
+                  .whereType<Map>()
+                  .map((patient) => Map<String, dynamic>.from(patient))
+                  .toList();
+              isLoading = false;
+            });
+          } else {
+            throw Exception(
+              'The server response does not contain a valid patients list.',
+            );
+          }
+        } else if (decoded is List) {
+          // Also support a plain list response for compatibility.
+          setState(() {
+            patients = decoded
+                .whereType<Map>()
+                .map((patient) => Map<String, dynamic>.from(patient))
+                .toList();
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Unexpected patient data received from server.');
+        }
+      } else {
+        throw Exception('Server returned status ${response.statusCode}.');
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Could not load patient data.\n$e';
+      });
+    }
+  }
+
+  String displayValue(dynamic value) {
+    if (value == null || value.toString().trim().isEmpty) {
+      return 'Not available';
+    }
+    return value.toString();
+  }
+
+  Color riskColor(String risk) {
+    final value = risk.toLowerCase();
+    if (value.contains('high')) return Colors.red;
+    if (value.contains('moderate')) return Colors.orange;
+    if (value.contains('low')) return Colors.green;
+    return Colors.blueGrey;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Total Screenings'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh patient data',
+            onPressed: isLoading ? null : fetchPatients,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 56,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(errorMessage!, textAlign: TextAlign.center),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      onPressed: fetchPatients,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : patients.isEmpty
+          ? RefreshIndicator(
+              onRefresh: fetchPatients,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 180),
+                  Icon(Icons.people_outline, size: 70),
+                  SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      'No patient screenings found.',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Center(child: Text('Pull down to refresh.')),
+                ],
+              ),
+            )
+          : RefreshIndicator(
+              onRefresh: fetchPatients,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: patients.length,
+                itemBuilder: (context, index) {
+                  final patient = patients[index];
+                  final risk = displayValue(patient['risk_level']);
+                  final riskColour = riskColor(risk);
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 8,
+                      ),
+                      childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                      leading: CircleAvatar(
+                        radius: 25,
+                        child: Text(
+                          displayValue(patient['id']),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(
+                        displayValue(patient['name']),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        'Age ${displayValue(patient['age'])} • ${displayValue(patient['gender'])}',
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: riskColour.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          risk,
+                          style: TextStyle(
+                            color: riskColour,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      children: [
+                        _dataRow('Patient ID', patient['id']),
+                        _dataRow('Phone', patient['phone']),
+                        _dataRow('Pain Level', patient['pain_level']),
+                        _dataRow('Affected Knee', patient['affected_knee']),
+                        _dataRow(
+                          'Walking Difficulty',
+                          patient['walking_difficulty'],
+                        ),
+                        _dataRow('Previous Injury', patient['previous_injury']),
+                        _dataRow('Knee Mobility', patient['knee_mobility']),
+                        _dataRow('Knee Flexion', patient['knee_flexion']),
+                        _dataRow('Walking Speed', patient['walking_speed']),
+                        _dataRow(
+                          'Sit-to-Stand Time',
+                          patient['sit_to_stand_time'],
+                        ),
+                        _dataRow(
+                          'Movement Symmetry',
+                          patient['movement_symmetry'],
+                        ),
+                        _dataRow('Risk Score', patient['risk_score']),
+                        _dataRow('Risk Level', patient['risk_level']),
+                        _dataRow('Video', patient['video_filename']),
+                        _dataRow('Screening Date', patient['screening_date']),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+
+  Widget _dataRow(String label, dynamic value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 3,
+            child: Text(displayValue(value), textAlign: TextAlign.right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ===============================================================
+// SAVED VIDEOS SCREEN
+// ===============================================================
+
+class SavedVideosScreen extends StatefulWidget {
+  const SavedVideosScreen({super.key});
+
+  @override
+  State<SavedVideosScreen> createState() => _SavedVideosScreenState();
+}
+
+class _SavedVideosScreenState extends State<SavedVideosScreen> {
+  List<Map<String, dynamic>> videos = [];
+
+  bool isLoading = true;
+  String? errorMessage;
+  String? deletingFilename;
+
+  @override
+  void initState() {
+    super.initState();
+    loadVideos();
+  }
+
+  // =============================================================
+  // LOAD VIDEOS
+  // =============================================================
+
+  Future<void> loadVideos() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await http.get(Uri.parse('$apiBaseUrl/videos'));
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        final List<dynamic> videoList = data['videos'] ?? [];
+
+        setState(() {
+          videos = videoList
+              .map((video) => Map<String, dynamic>.from(video))
+              .toList();
+
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          isLoading = false;
+          errorMessage = 'Server returned status ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Could not connect to the AI server.\n$e';
+      });
+    }
+  }
+
+  // =============================================================
+  // DELETE VIDEO
+  // =============================================================
+
+  Future<void> deleteVideo(String filename) async {
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.delete_forever, color: Colors.red),
+              SizedBox(width: 10),
+              Text('Delete Video?'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to permanently delete this video?\n\n$filename',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    setState(() {
+      deletingFilename = filename;
+    });
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$apiBaseUrl/videos/${Uri.encodeComponent(filename)}'),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['status'] == 'success') {
+          setState(() {
+            videos.removeWhere((video) => video['filename'] == filename);
+
+            deletingFilename = null;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Video deleted successfully.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          setState(() {
+            deletingFilename = null;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                data['message']?.toString() ?? 'Could not delete video.',
+              ),
+            ),
+          );
+        }
+      } else {
+        setState(() {
+          deletingFilename = null;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Delete failed. Server returned ${response.statusCode}.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        deletingFilename = null;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not connect to server.\n$e')),
+      );
+    }
+  }
+
+  // =============================================================
+  // BUILD
+  // =============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Saved Videos'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh',
+            onPressed: isLoading ? null : loadVideos,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+      ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.cloud_off, size: 70, color: Colors.red),
+              const SizedBox(height: 20),
+              Text(errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: loadVideos,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (videos.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: loadVideos,
+        child: ListView(
+          children: const [
+            SizedBox(height: 180),
+            Icon(Icons.video_library_outlined, size: 80, color: Colors.grey),
+            SizedBox(height: 20),
+            Center(
+              child: Text(
+                'No saved videos found.',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(height: 8),
+            Center(child: Text('Recorded videos will appear here.')),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: loadVideos,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: videos.length,
+        itemBuilder: (context, index) {
+          final video = videos[index];
+
+          final String filename =
+              video['filename']?.toString() ?? 'Unknown video';
+
+          final dynamic sizeValue = video['size_bytes'];
+
+          String sizeText = '';
+
+          if (sizeValue is num) {
+            final double mb = sizeValue / (1024 * 1024);
+
+            sizeText = '${mb.toStringAsFixed(2)} MB';
+          }
+
+          final bool isDeleting = deletingFilename == filename;
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 14),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  // VIDEO ICON
+                  Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.video_file,
+                      color: Colors.blue,
+                      size: 30,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  // VIDEO INFORMATION
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          filename,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        if (sizeText.isNotEmpty) ...[
+                          const SizedBox(height: 5),
+                          Text(
+                            sizeText,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // PLAY BUTTON
+                  IconButton(
+                    tooltip: 'Play video',
+                    onPressed: isDeleting
+                        ? null
+                        : () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    VideoPlayerScreen(filename: filename),
+                              ),
+                            );
+                          },
+                    icon: const Icon(
+                      Icons.play_circle_fill,
+                      size: 34,
+                      color: Colors.blue,
+                    ),
+                  ),
+
+                  // DELETE BUTTON
+                  IconButton(
+                    tooltip: 'Delete video',
+                    onPressed: isDeleting
+                        ? null
+                        : () {
+                            deleteVideo(filename);
+                          },
+                    icon: isDeleting
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete, size: 28, color: Colors.red),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ===============================================================
+// VIDEO PLAYER
+// ===============================================================
+
+class VideoPlayerScreen extends StatefulWidget {
+  final String filename;
+
+  const VideoPlayerScreen({super.key, required this.filename});
+
+  @override
+  State<VideoPlayerScreen> createState() => _VideoPlayerScreenState();
+}
+
+class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  late VideoPlayerController controller;
+
+  bool isInitialized = false;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    initializeVideo();
+  }
+
+  Future<void> initializeVideo() async {
+    try {
+      final String videoUrl =
+          '$apiBaseUrl/videos/${Uri.encodeComponent(widget.filename)}';
+
+      controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+
+      await controller.initialize();
+
+      if (!mounted) return;
+
+      setState(() {
+        isInitialized = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        errorMessage = 'Could not load video.\n$e';
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (isInitialized) {
+      controller.dispose();
+    }
+
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Video Player')),
+      body: Center(
+        child: errorMessage != null
+            ? Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(errorMessage!, textAlign: TextAlign.center),
+              )
+            : !isInitialized
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    widget.filename,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  AspectRatio(
+                    aspectRatio: controller.value.aspectRatio,
+                    child: VideoPlayer(controller),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  VideoProgressIndicator(
+                    controller,
+                    allowScrubbing: true,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  IconButton(
+                    iconSize: 55,
+                    onPressed: () {
+                      setState(() {
+                        if (controller.value.isPlaying) {
+                          controller.pause();
+                        } else {
+                          controller.play();
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      controller.value.isPlaying
+                          ? Icons.pause_circle
+                          : Icons.play_circle,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -405,9 +1094,8 @@ class PatientRegistrationScreen extends StatefulWidget {
 }
 
 class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
-  final TextEditingController nameController = TextEditingController();
-
-  final TextEditingController ageController = TextEditingController();
+  final nameController = TextEditingController();
+  final ageController = TextEditingController();
 
   String? selectedGender;
 
@@ -416,6 +1104,43 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
     nameController.dispose();
     ageController.dispose();
     super.dispose();
+  }
+
+  void continueToClinicalAssessment() {
+    final name = nameController.text.trim();
+    final age = int.tryParse(ageController.text.trim());
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the patient name.')),
+      );
+      return;
+    }
+
+    if (age == null || age <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid age.')),
+      );
+      return;
+    }
+
+    if (selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select the patient gender.')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClinicalAssessmentScreen(
+          patientName: name,
+          patientAge: age,
+          patientGender: selectedGender!,
+        ),
+      ),
+    );
   }
 
   @override
@@ -438,15 +1163,15 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                 const SizedBox(height: 8),
 
                 Text(
-                  'Enter the patient information to begin screening.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  'Enter patient information to begin screening.',
+                  style: TextStyle(color: Colors.grey[600]),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 30),
 
                 const Text(
                   'Full Name',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
@@ -460,11 +1185,11 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 const Text(
                   'Age',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
@@ -479,11 +1204,11 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 const Text(
                   'Gender',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 8),
@@ -507,21 +1232,13 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
                   },
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 35),
 
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ClinicalAssessmentScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: continueToClinicalAssessment,
                     icon: const Icon(Icons.arrow_forward),
                     label: const Text(
                       'Continue',
@@ -546,7 +1263,16 @@ class _PatientRegistrationScreenState extends State<PatientRegistrationScreen> {
 // ===============================================================
 
 class ClinicalAssessmentScreen extends StatefulWidget {
-  const ClinicalAssessmentScreen({super.key});
+  final String patientName;
+  final int patientAge;
+  final String patientGender;
+
+  const ClinicalAssessmentScreen({
+    super.key,
+    required this.patientName,
+    required this.patientAge,
+    required this.patientGender,
+  });
 
   @override
   State<ClinicalAssessmentScreen> createState() =>
@@ -560,227 +1286,232 @@ class _ClinicalAssessmentScreenState extends State<ClinicalAssessmentScreen> {
   String? walkingDifficulty;
   String? previousInjury;
 
+  void continueToMovementAssessment() {
+    if (affectedKnee == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select the affected knee.')),
+      );
+      return;
+    }
+
+    if (walkingDifficulty == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select the walking difficulty.')),
+      );
+      return;
+    }
+
+    if (previousInjury == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select whether there was a previous injury.'),
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MovementAssessmentScreen(
+          patientName: widget.patientName,
+          patientAge: widget.patientAge,
+          patientGender: widget.patientGender,
+          painLevel: painLevel.round(),
+          affectedKnee: affectedKnee!,
+          walkingDifficulty: walkingDifficulty!,
+          previousInjury: previousInjury!,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Clinical Assessment')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 750),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Clinical & Risk Assessment',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Collect patient symptoms before movement analysis.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Pain Level (0-10)',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Rate the patient\'s current knee pain.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 16),
-
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '${painLevel.round()} / 10',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Slider(
-                        value: painLevel,
-                        min: 0,
-                        max: 10,
-                        divisions: 10,
-                        label: painLevel.round().toString(),
-                        onChanged: (value) {
-                          setState(() {
-                            painLevel = value;
-                          });
-                        },
-                      ),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [Text('No Pain'), Text('Severe Pain')],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Affected Knee',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                _buildOption(
-                  'Right Knee',
-                  'Right',
-                  affectedKnee,
-                  Icons.directions_walk,
-                ),
-
-                _buildOption(
-                  'Left Knee',
-                  'Left',
-                  affectedKnee,
-                  Icons.directions_walk,
-                ),
-
-                _buildOption(
-                  'Both Knees',
-                  'Both',
-                  affectedKnee,
-                  Icons.accessibility_new,
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Difficulty Walking',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                _buildWalkingOption('None'),
-                _buildWalkingOption('Mild'),
-                _buildWalkingOption('Moderate'),
-                _buildWalkingOption('Severe'),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'Previous Knee Injury',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 12),
-
-                _buildInjuryOption('Yes'),
-                _buildInjuryOption('No'),
-
-                const SizedBox(height: 40),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const MovementAssessmentScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text(
-                      'Continue to Movement Assessment',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-              ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Clinical & Risk Assessment',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
-          ),
+
+            const SizedBox(height: 30),
+
+            const Text(
+              'Pain Level (0-10)',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            Slider(
+              value: painLevel,
+              min: 0,
+              max: 10,
+              divisions: 10,
+              label: painLevel.round().toString(),
+              onChanged: (value) {
+                setState(() {
+                  painLevel = value;
+                });
+              },
+            ),
+
+            Center(
+              child: Text(
+                '${painLevel.round()} / 10',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            const Text(
+              'Affected Knee',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            _radioOption(
+              'Right Knee',
+              'Right',
+              affectedKnee,
+              Icons.directions_walk,
+              (value) {
+                setState(() {
+                  affectedKnee = value;
+                });
+              },
+            ),
+
+            _radioOption(
+              'Left Knee',
+              'Left',
+              affectedKnee,
+              Icons.directions_walk,
+              (value) {
+                setState(() {
+                  affectedKnee = value;
+                });
+              },
+            ),
+
+            _radioOption(
+              'Both Knees',
+              'Both',
+              affectedKnee,
+              Icons.accessibility_new,
+              (value) {
+                setState(() {
+                  affectedKnee = value;
+                });
+              },
+            ),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'Difficulty Walking',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            _simpleRadio('None', walkingDifficulty, (value) {
+              setState(() {
+                walkingDifficulty = value;
+              });
+            }),
+
+            _simpleRadio('Mild', walkingDifficulty, (value) {
+              setState(() {
+                walkingDifficulty = value;
+              });
+            }),
+
+            _simpleRadio('Moderate', walkingDifficulty, (value) {
+              setState(() {
+                walkingDifficulty = value;
+              });
+            }),
+
+            _simpleRadio('Severe', walkingDifficulty, (value) {
+              setState(() {
+                walkingDifficulty = value;
+              });
+            }),
+
+            const SizedBox(height: 20),
+
+            const Text(
+              'Previous Knee Injury',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            _simpleRadio('Yes', previousInjury, (value) {
+              setState(() {
+                previousInjury = value;
+              });
+            }),
+
+            _simpleRadio('No', previousInjury, (value) {
+              setState(() {
+                previousInjury = value;
+              });
+            }),
+
+            const SizedBox(height: 35),
+
+            SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: ElevatedButton.icon(
+                onPressed: continueToMovementAssessment,
+                icon: const Icon(Icons.arrow_forward),
+                label: const Text(
+                  'Continue to Movement Assessment',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildOption(
+  Widget _radioOption(
     String title,
     String value,
     String? groupValue,
     IconData icon,
+    ValueChanged<String?> onChanged,
   ) {
-    final bool selected = groupValue == value;
-
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
       child: RadioListTile<String>(
         value: value,
         groupValue: groupValue,
-        secondary: Icon(icon, color: selected ? Colors.blue : Colors.grey),
+        secondary: Icon(icon),
         title: Text(title),
-        activeColor: Colors.blue,
-        onChanged: (value) {
-          setState(() {
-            affectedKnee = value;
-          });
-        },
+        onChanged: onChanged,
       ),
     );
   }
 
-  Widget _buildWalkingOption(String value) {
+  Widget _simpleRadio(
+    String value,
+    String? groupValue,
+    ValueChanged<String?> onChanged,
+  ) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
       child: RadioListTile<String>(
         value: value,
-        groupValue: walkingDifficulty,
+        groupValue: groupValue,
         title: Text(value),
-        activeColor: Colors.orange,
-        onChanged: (value) {
-          setState(() {
-            walkingDifficulty = value;
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildInjuryOption(String value) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: previousInjury,
-        title: Text(value),
-        activeColor: Colors.red,
-        onChanged: (value) {
-          setState(() {
-            previousInjury = value;
-          });
-        },
+        onChanged: onChanged,
       ),
     );
   }
@@ -791,7 +1522,25 @@ class _ClinicalAssessmentScreenState extends State<ClinicalAssessmentScreen> {
 // ===============================================================
 
 class MovementAssessmentScreen extends StatefulWidget {
-  const MovementAssessmentScreen({super.key});
+  final String patientName;
+  final int patientAge;
+  final String patientGender;
+
+  final int painLevel;
+  final String affectedKnee;
+  final String walkingDifficulty;
+  final String previousInjury;
+
+  const MovementAssessmentScreen({
+    super.key,
+    required this.patientName,
+    required this.patientAge,
+    required this.patientGender,
+    required this.painLevel,
+    required this.affectedKnee,
+    required this.walkingDifficulty,
+    required this.previousInjury,
+  });
 
   @override
   State<MovementAssessmentScreen> createState() =>
@@ -799,29 +1548,16 @@ class MovementAssessmentScreen extends StatefulWidget {
 }
 
 class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
-  String? walkingTest;
-  String? sitToStandTest;
+  CameraController? cameraController;
+  Future<void>? cameraInitialization;
 
-  double kneeFlexion = 90;
-
-  bool videoRecorded = false;
   bool isRecording = false;
+  bool videoRecorded = false;
   bool isUploading = false;
 
   String? recordedVideoPath;
 
-  CameraController? cameraController;
-  Future<void>? cameraInitialization;
-
-  // ===============================================================
-  // API ENDPOINT
-  // ===============================================================
-
-  static const String apiUrl = 'http://10.123.133.160:8000/analyze';
-
-  // ===============================================================
-  // CAMERA INITIALIZATION
-  // ===============================================================
+  double kneeFlexion = 90;
 
   @override
   void initState() {
@@ -838,10 +1574,6 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
     }
   }
 
-  // ===============================================================
-  // START RECORDING
-  // ===============================================================
-
   Future<void> startVideoRecording() async {
     if (cameraController == null || !cameraController!.value.isInitialized) {
       ScaffoldMessenger.of(
@@ -850,31 +1582,24 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
       return;
     }
 
-    if (cameraController!.value.isRecordingVideo) {
-      return;
-    }
-
     try {
       await cameraController!.startVideoRecording();
+
+      if (!mounted) return;
 
       setState(() {
         isRecording = true;
         videoRecorded = false;
         recordedVideoPath = null;
       });
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Recording started.')));
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Could not start recording: $e')));
     }
   }
-
-  // ===============================================================
-  // STOP RECORDING
-  // ===============================================================
 
   Future<void> stopVideoRecording() async {
     if (cameraController == null || !cameraController!.value.isRecordingVideo) {
@@ -883,6 +1608,8 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
 
     try {
       final XFile video = await cameraController!.stopVideoRecording();
+
+      if (!mounted) return;
 
       setState(() {
         isRecording = false;
@@ -893,9 +1620,9 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Movement video recorded successfully!')),
       );
-
-      debugPrint('Recorded video path: ${video.path}');
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         isRecording = false;
       });
@@ -905,10 +1632,6 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
       ).showSnackBar(SnackBar(content: Text('Could not stop recording: $e')));
     }
   }
-
-  // ===============================================================
-  // UPLOAD VIDEO TO AI API
-  // ===============================================================
 
   Future<void> uploadVideoToAI() async {
     if (recordedVideoPath == null) {
@@ -923,61 +1646,139 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
     });
 
     try {
-      debugPrint('====================================');
-      debugPrint('Uploading video to AI API...');
-      debugPrint('Video: $recordedVideoPath');
-      debugPrint('API: $apiUrl');
-      debugPrint('====================================');
-
-      final uri = Uri.parse(apiUrl);
-
-      final request = http.MultipartRequest('POST', uri);
+      // -----------------------------------------------------------
+      // STEP 1: Upload movement video for AI analysis
+      // -----------------------------------------------------------
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$apiBaseUrl/analyze'),
+      );
 
       request.files.add(
         await http.MultipartFile.fromPath('video', recordedVideoPath!),
       );
 
       final response = await request.send();
-
       final responseBody = await response.stream.bytesToString();
-
-      debugPrint('API Status Code: ${response.statusCode}');
-
-      debugPrint('API Response: $responseBody');
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> result = jsonDecode(responseBody);
-
+      if (response.statusCode != 200) {
         setState(() {
           isUploading = false;
         });
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AIRiskScreeningScreen(result: result),
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('AI server returned ${response.statusCode}')),
         );
-      } else {
+        return;
+      }
+
+      final Map<String, dynamic> result = Map<String, dynamic>.from(
+        jsonDecode(responseBody),
+      );
+
+      // -----------------------------------------------------------
+      // STEP 2: Read AI result values safely
+      // -----------------------------------------------------------
+      final dynamic riskScoreValue = result['risk_score'];
+      final dynamic riskLevelValue = result['risk_level'];
+      final dynamic filenameValue = result['filename'];
+      final dynamic walkingSpeedValue = result['walking_speed'];
+      final dynamic sitToStandValue = result['sit_to_stand_time'];
+      final dynamic aiKneeFlexionValue = result['knee_flexion'];
+      final dynamic movementSymmetryValue = result['movement_symmetry'];
+
+      final double riskScore = riskScoreValue is num
+          ? riskScoreValue.toDouble()
+          : 0;
+
+      final String riskLevel = riskLevelValue?.toString() ?? 'Unknown';
+
+      final String filename = filenameValue?.toString() ?? '';
+
+      final double walkingSpeed = walkingSpeedValue is num
+          ? walkingSpeedValue.toDouble()
+          : 0;
+
+      final double sitToStandTime = sitToStandValue is num
+          ? sitToStandValue.toDouble()
+          : 0;
+
+      final double aiKneeFlexion = aiKneeFlexionValue is num
+          ? aiKneeFlexionValue.toDouble()
+          : kneeFlexion;
+
+      final double movementSymmetry = movementSymmetryValue is num
+          ? movementSymmetryValue.toDouble()
+          : 0;
+
+      // -----------------------------------------------------------
+      // STEP 3: Save the COMPLETE screening to the database
+      // -----------------------------------------------------------
+      // FastAPI /patients/complete currently accepts query parameters.
+      final completeUri = Uri.parse('$apiBaseUrl/patients/complete').replace(
+        queryParameters: {
+          'name': widget.patientName,
+          'age': widget.patientAge.toString(),
+          'gender': widget.patientGender,
+          'pain_level': widget.painLevel.toString(),
+          'affected_knee': widget.affectedKnee,
+          'walking_difficulty': widget.walkingDifficulty,
+          'previous_injury': widget.previousInjury,
+          'knee_mobility': kneeFlexion.toString(),
+          'knee_flexion': aiKneeFlexion.toString(),
+          'walking_speed': walkingSpeed.toString(),
+          'sit_to_stand_time': sitToStandTime.toString(),
+          'movement_symmetry': movementSymmetry.toString(),
+          'risk_score': riskScore.toString(),
+          'risk_level': riskLevel,
+          'video_filename': filename,
+        },
+      );
+
+      final saveResponse = await http.post(completeUri);
+
+      if (!mounted) return;
+
+      if (saveResponse.statusCode != 200) {
         setState(() {
           isUploading = false;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('AI API returned status ${response.statusCode}'),
+            content: Text(
+              'AI analysis succeeded, but patient data could not be saved. '
+              'Server returned ${saveResponse.statusCode}.',
+            ),
           ),
         );
+        return;
       }
-    } catch (e) {
-      debugPrint('====================================');
-      debugPrint('UPLOAD ERROR');
-      debugPrint('$e');
-      debugPrint('====================================');
 
-      if (!mounted) return;
+      final dynamic saveDecoded = jsonDecode(saveResponse.body);
+
+      if (saveDecoded is! Map<String, dynamic>) {
+        setState(() {
+          isUploading = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Patient save response was invalid.')),
+        );
+        return;
+      }
+
+      // Add useful information to the result shown on the AI screen.
+      result['patient_id'] = saveDecoded['patient_id'];
+      result['risk_score'] = riskScore;
+      result['risk_level'] = riskLevel;
+      result['filename'] = filename;
+      result['walking_speed'] = walkingSpeed;
+      result['sit_to_stand_time'] = sitToStandTime;
+      result['knee_flexion'] = aiKneeFlexion;
+      result['movement_symmetry'] = movementSymmetry;
 
       setState(() {
         isUploading = false;
@@ -985,16 +1786,34 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Could not connect to AI server.\n$e'),
-          duration: const Duration(seconds: 5),
+          content: Text(
+            'Screening saved successfully. Patient ID: ${saveDecoded['patient_id']}',
+          ),
+          duration: const Duration(seconds: 2),
         ),
+      );
+
+      // -----------------------------------------------------------
+      // STEP 4: Show the AI result
+      // -----------------------------------------------------------
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AIRiskScreeningScreen(result: result),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isUploading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not complete screening.\n$e')),
       );
     }
   }
-
-  // ===============================================================
-  // DISPOSE CAMERA
-  // ===============================================================
 
   @override
   void dispose() {
@@ -1002,502 +1821,178 @@ class _MovementAssessmentScreenState extends State<MovementAssessmentScreen> {
     super.dispose();
   }
 
-  // ===============================================================
-  // BUILD
-  // ===============================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Movement Assessment')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 750),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Movement Assessment',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Movement Assessment',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 25),
+
+            const Text(
+              'Knee Mobility',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 10),
+
+            Center(
+              child: Text(
+                '${kneeFlexion.round()}°',
+                style: const TextStyle(
+                  fontSize: 34,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
 
-                const SizedBox(height: 8),
+            Slider(
+              value: kneeFlexion,
+              min: 0,
+              max: 140,
+              divisions: 28,
+              onChanged: (value) {
+                setState(() {
+                  kneeFlexion = value;
+                });
+              },
+            ),
 
-                Text(
-                  'Assess walking, functional movement and knee mobility.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
+            const SizedBox(height: 25),
 
-                const SizedBox(height: 30),
+            const Text(
+              'Movement Video',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
 
-                // =================================================
-                // WALKING TEST
-                // =================================================
-                const Text(
-                  'Walking Assessment',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
+            const SizedBox(height: 15),
 
-                const SizedBox(height: 8),
-
-                Text(
-                  'How does the patient walk during the assessment?',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 14),
-
-                _buildWalkingTestOption('Normal', Icons.directions_walk),
-
-                _buildWalkingTestOption(
-                  'Slightly Abnormal',
-                  Icons.directions_walk,
-                ),
-
-                _buildWalkingTestOption(
-                  'Clearly Abnormal',
-                  Icons.warning_amber,
-                ),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // SIT TO STAND
-                // =================================================
-                const Text(
-                  'Sit-to-Stand Test',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Observe how easily the patient can stand from a chair.',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 14),
-
-                _buildSitStandOption('Easy', Icons.airline_seat_recline_normal),
-
-                _buildSitStandOption(
-                  'Moderate Difficulty',
-                  Icons.accessibility_new,
-                ),
-
-                _buildSitStandOption('Severe Difficulty', Icons.warning),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // KNEE MOBILITY
-                // =================================================
-                const Text(
-                  'Knee Mobility',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Record the approximate knee flexion observed.',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 16),
-
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        '${kneeFlexion.round()}°',
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
+            // CAMERA
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: cameraController == null
+                  ? const SizedBox(
+                      height: 300,
+                      child: Center(
+                        child: Text(
+                          'No camera available',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
+                    )
+                  : FutureBuilder<void>(
+                      future: cameraInitialization,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          return AspectRatio(
+                            aspectRatio: cameraController!.value.aspectRatio,
+                            child: CameraPreview(cameraController!),
+                          );
+                        }
 
-                      const SizedBox(height: 8),
-
-                      const Text(
-                        'Approximate Knee Flexion',
-                        style: TextStyle(fontSize: 14),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Slider(
-                        value: kneeFlexion,
-                        min: 0,
-                        max: 140,
-                        divisions: 28,
-                        label: '${kneeFlexion.round()}°',
-                        onChanged: (value) {
-                          setState(() {
-                            kneeFlexion = value;
-                          });
-                        },
-                      ),
-
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [Text('0°'), Text('140°')],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // CAMERA
-                // =================================================
-                const Text(
-                  'Movement Video',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  'Use the camera to record a short walking video for movement analysis.',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 16),
-
-                // =================================================
-                // LIVE CAMERA PREVIEW
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: cameraController == null
-                      ? const SizedBox(
+                        return const SizedBox(
                           height: 300,
                           child: Center(
-                            child: Text(
-                              'No camera available',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        )
-                      : FutureBuilder<void>(
-                          future: cameraInitialization,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.done) {
-                              if (cameraController!.value.hasError) {
-                                return const SizedBox(
-                                  height: 300,
-                                  child: Center(
-                                    child: Text(
-                                      'Camera error',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              return AspectRatio(
-                                aspectRatio:
-                                    cameraController!.value.aspectRatio,
-                                child: CameraPreview(cameraController!),
-                              );
-                            }
-
-                            if (snapshot.hasError) {
-                              return SizedBox(
-                                height: 300,
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Text(
-                                      'Camera error:\n${snapshot.error}',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return const SizedBox(
-                              height: 300,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // =================================================
-                // RECORDING STATUS
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        isRecording
-                            ? Icons.fiber_manual_record
-                            : videoRecorded
-                            ? Icons.video_camera_back
-                            : Icons.videocam_outlined,
-                        size: 64,
-                        color: isRecording
-                            ? Colors.red
-                            : videoRecorded
-                            ? Colors.green
-                            : Colors.blue,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      Text(
-                        isRecording
-                            ? 'Recording in progress...'
-                            : videoRecorded
-                            ? 'Movement video recorded'
-                            : 'Camera ready',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        isRecording
-                            ? 'Perform the walking movement now.'
-                            : videoRecorded
-                            ? 'Video is ready for AI analysis.'
-                            : 'Position the patient in front of the camera.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // =================================================
-                      // RECORD BUTTON
-                      // =================================================
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: isUploading
-                              ? null
-                              : isRecording
-                              ? stopVideoRecording
-                              : startVideoRecording,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isRecording
-                                ? Colors.red
-                                : Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: Icon(isRecording ? Icons.stop : Icons.videocam),
-                          label: Text(
-                            isRecording
-                                ? 'Stop Recording'
-                                : videoRecorded
-                                ? 'Record Again'
-                                : 'Start Recording',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      if (videoRecorded && recordedVideoPath != null) ...[
-                        const SizedBox(height: 16),
-
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            'Video saved successfully.\n\n$recordedVideoPath',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 35),
-
-                // =================================================
-                // SUMMARY
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.analytics_outlined,
-                        color: Colors.green,
-                        size: 32,
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'AI Movement Analysis',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 6),
-
-                            Text(
-                              'The recorded movement video will be uploaded to the AI server for analysis.',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                height: 1.4,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // AI BUTTON
-                // =================================================
-                SizedBox(
-                  width: double.infinity,
-                  height: 58,
-                  child: ElevatedButton.icon(
-                    onPressed: videoRecorded && !isUploading
-                        ? uploadVideoToAI
-                        : null,
-                    icon: isUploading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
                             child: CircularProgressIndicator(
-                              strokeWidth: 2,
                               color: Colors.white,
                             ),
-                          )
-                        : const Icon(Icons.psychology),
-                    label: Text(
-                      isUploading
-                          ? 'Analyzing Movement...'
-                          : 'Continue to AI Risk Screening',
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-              ],
             ),
-          ),
+
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed: isUploading
+                    ? null
+                    : isRecording
+                    ? stopVideoRecording
+                    : startVideoRecording,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isRecording ? Colors.red : Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+                icon: Icon(isRecording ? Icons.stop : Icons.videocam),
+                label: Text(
+                  isRecording
+                      ? 'Stop Recording'
+                      : videoRecorded
+                      ? 'Record Again'
+                      : 'Start Recording',
+                ),
+              ),
+            ),
+
+            if (videoRecorded) ...[
+              const SizedBox(height: 15),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text('Movement video recorded successfully.'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 30),
+
+            SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: ElevatedButton.icon(
+                onPressed: videoRecorded && !isUploading
+                    ? uploadVideoToAI
+                    : null,
+                icon: isUploading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.psychology),
+                label: Text(
+                  isUploading
+                      ? 'Analyzing Movement...'
+                      : 'Continue to AI Risk Screening',
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+          ],
         ),
-      ),
-    );
-  }
-
-  // ===============================================================
-  // WALKING OPTION
-  // ===============================================================
-
-  Widget _buildWalkingTestOption(String value, IconData icon) {
-    final bool selected = walkingTest == value;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: walkingTest,
-        secondary: Icon(icon, color: selected ? Colors.blue : Colors.grey),
-        title: Text(value),
-        activeColor: Colors.blue,
-        onChanged: (value) {
-          setState(() {
-            walkingTest = value;
-          });
-        },
-      ),
-    );
-  }
-
-  // ===============================================================
-  // SIT TO STAND OPTION
-  // ===============================================================
-
-  Widget _buildSitStandOption(String value, IconData icon) {
-    final bool selected = sitToStandTest == value;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: RadioListTile<String>(
-        value: value,
-        groupValue: sitToStandTest,
-        secondary: Icon(icon, color: selected ? Colors.orange : Colors.grey),
-        title: Text(value),
-        activeColor: Colors.orange,
-        onChanged: (value) {
-          setState(() {
-            sitToStandTest = value;
-          });
-        },
       ),
     );
   }
@@ -1514,7 +2009,11 @@ class AIRiskScreeningScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int riskScore = (result['risk_score'] ?? 0) as int;
+    final dynamic scoreValue = result['risk_score'];
+
+    final int riskScore = scoreValue is num
+        ? scoreValue.toInt()
+        : int.tryParse(scoreValue?.toString() ?? '') ?? 0;
 
     final String riskLevel = result['risk_level']?.toString() ?? 'Unknown';
 
@@ -1534,264 +2033,130 @@ class AIRiskScreeningScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('AI Risk Screening')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 750),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'AI Movement Analysis',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
+        child: Column(
+          children: [
+            const Text(
+              'AI Movement Analysis',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
 
-                const SizedBox(height: 8),
+            const SizedBox(height: 30),
 
-                Text(
-                  'Analysis completed from the recorded movement video.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(28),
+              decoration: BoxDecoration(
+                color: riskColor.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.psychology, size: 60, color: riskColor),
 
-                const SizedBox(height: 30),
+                  const SizedBox(height: 15),
 
-                // =================================================
-                // RISK SCORE
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: riskColor.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: riskColor.withValues(alpha: 0.30),
+                  const Text(
+                    'Preliminary OA Risk Score',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Text(
+                    '$riskScore / 100',
+                    style: TextStyle(
+                      fontSize: 48,
+                      fontWeight: FontWeight.bold,
+                      color: riskColor,
                     ),
                   ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.psychology, size: 60, color: riskColor),
 
-                      const SizedBox(height: 16),
+                  const SizedBox(height: 10),
 
-                      const Text(
-                        'Preliminary OA Risk Score',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: riskColor,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Text(
+                      riskLevel,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
-
-                      const SizedBox(height: 10),
-
-                      Text(
-                        '$riskScore / 100',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: riskColor,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: riskColor,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Text(
-                          riskLevel,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // =================================================
-                // VIDEO
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.video_file,
-                        size: 35,
-                        color: Colors.blue,
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Analyzed Video',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              filename,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.grey[700]),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                const Text(
-                  'AI Analysis Results',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 16),
-
-                // =================================================
-                // DYNAMIC METRICS
-                // =================================================
-                _buildResultCard(
-                  'Walking Speed',
-                  '${result['walking_speed'] ?? 'N/A'} m/s',
-                  Icons.speed,
-                ),
-
-                _buildResultCard(
-                  'Sit-to-Stand',
-                  '${result['sit_to_stand_time'] ?? 'N/A'} sec',
-                  Icons.accessibility_new,
-                ),
-
-                _buildResultCard(
-                  'Knee Flexion',
-                  '${result['knee_flexion'] ?? 'N/A'}°',
-                  Icons.directions_walk,
-                ),
-
-                _buildResultCard(
-                  'Movement Symmetry',
-                  '${result['movement_symmetry'] ?? 'N/A'}%',
-                  Icons.sync_alt,
-                ),
-
-                _buildResultCard(
-                  'Left Knee Stability',
-                  '${result['left_knee_stability'] ?? 'N/A'}%',
-                  Icons.accessibility,
-                ),
-
-                _buildResultCard(
-                  'Right Knee Stability',
-                  '${result['right_knee_stability'] ?? 'N/A'}%',
-                  Icons.accessibility,
-                ),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // INDICATORS
-                // =================================================
-                const Text(
-                  'Risk Indicators',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-
-                const SizedBox(height: 16),
-
-                _buildIndicators(),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // RECOMMENDATION
-                // =================================================
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.medical_services, color: Colors.blue),
-                          SizedBox(width: 10),
-                          Text(
-                            'Recommendation',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 12),
-
-                      Text(
-                        'The AI result is a preliminary screening result. Further clinical evaluation is recommended before making any medical decision.',
-                        style: TextStyle(height: 1.5),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // =================================================
-                // BACK BUTTON
-                // =================================================
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.arrow_back),
-                    label: const Text('Back to Movement Assessment'),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-              ],
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 25),
+
+            _resultCard('Analyzed Video', filename, Icons.video_file),
+
+            _resultCard(
+              'Walking Speed',
+              '${result['walking_speed'] ?? 'N/A'} m/s',
+              Icons.speed,
+            ),
+
+            _resultCard(
+              'Sit-to-Stand',
+              '${result['sit_to_stand_time'] ?? 'N/A'} sec',
+              Icons.accessibility_new,
+            ),
+
+            _resultCard(
+              'Knee Flexion',
+              '${result['knee_flexion'] ?? 'N/A'}°',
+              Icons.directions_walk,
+            ),
+
+            _resultCard(
+              'Movement Symmetry',
+              '${result['movement_symmetry'] ?? 'N/A'}%',
+              Icons.sync_alt,
+            ),
+
+            const SizedBox(height: 25),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                'This is a preliminary screening result and should not be used as a medical diagnosis. Further clinical evaluation is recommended.',
+                style: TextStyle(height: 1.5),
+              ),
+            ),
+
+            const SizedBox(height: 25),
+
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Back to Movement Assessment'),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ===============================================================
-  // RESULT CARD
-  // ===============================================================
-
-  Widget _buildResultCard(String title, String value, IconData icon) {
+  Widget _resultCard(String title, String value, IconData icon) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
@@ -1809,72 +2174,23 @@ class AIRiskScreeningScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: Colors.blue),
-          ),
-
+          Icon(icon, color: Colors.blue, size: 30),
           const SizedBox(width: 14),
-
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-
-          Text(
-            value,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ===============================================================
-  // INDICATORS
-  // ===============================================================
-
-  Widget _buildIndicators() {
-    final dynamic indicators = result['indicators'];
-
-    if (indicators is List && indicators.isNotEmpty) {
-      return Column(
-        children: indicators.map<Widget>((item) {
-          return Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber, color: Colors.orange),
-                const SizedBox(width: 12),
-                Expanded(child: Text(item.toString())),
-              ],
-            ),
-          );
-        }).toList(),
-      );
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Text(
-        'No specific risk indicators were returned by the AI server.',
       ),
     );
   }
