@@ -2,13 +2,14 @@
 from database import SessionLocal, Patient
 from fastapi import FastAPI, File, UploadFile 
 from fastapi.responses import FileResponse
+from interface import predict_gait_video
 import os
 import uuid
 import cv2
 
 app = FastAPI(title="Knee OA AI API")
 
-UPLOAD_FOLDER = "uploaded_videos"
+UPLOAD_FOLDER = "videos"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -258,142 +259,45 @@ async def analyze_video(
     # Create unique filename
     # --------------------------------------------------------
 
-    original_filename = video.filename or "uploaded_video.mp4"
+    filename = f"{uuid.uuid4().hex[:8]}_{video.filename}"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
 
-    file_extension = os.path.splitext(
-        original_filename
-    )[1]
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(video.file, buffer)
 
-    # Default extension if none was provided
-    if not file_extension:
-        file_extension = ".mp4"
+    try:
+        diagnosis, confidence = predict_gait_video(filepath)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI Inference failed: {str(e)}")
 
-    unique_filename = (
-        f"{uuid.uuid4()}"
-        f"{file_extension}"
-    )
+    # 3. Map the LSTM diagnosis to the UI's Risk Score (0-100)
+    if "NM" in diagnosis:
+        risk_level = "Low Risk"
+        risk_score = 15.0 + (confidence * 0.1) # e.g. 23.5
+    elif "EL" in diagnosis:
+        risk_level = "Moderate Risk"
+        risk_score = 45.0 + (confidence * 0.1)
+    elif "MD" in diagnosis:
+        risk_level = "High Risk"
+        risk_score = 75.0 + (confidence * 0.1)
+    else: # SV
+        risk_level = "Severe Risk"
+        risk_score = 90.0 + (confidence * 0.1)
 
-    video_path = os.path.join(
-        UPLOAD_FOLDER,
-        unique_filename
-    )
-
-    # --------------------------------------------------------
-    # Read uploaded video
-    # --------------------------------------------------------
-
-    video_data = await video.read()
-
-    # --------------------------------------------------------
-    # Save uploaded video
-    # --------------------------------------------------------
-
-    with open(
-        video_path,
-        "wb"
-    ) as file:
-
-        file.write(video_data)
-
-    # --------------------------------------------------------
-    # Read video information
-    # --------------------------------------------------------
-
-    cap = cv2.VideoCapture(
-        video_path
-    )
-
-    if not cap.isOpened():
-
-        # Delete invalid uploaded file
-        if os.path.exists(video_path):
-            os.remove(video_path)
-
-        return {
-            "status": "error",
-            "message": "Could not open uploaded video"
-        }
-
-    # --------------------------------------------------------
-    # Extract video information
-    # --------------------------------------------------------
-
-    frame_count = int(
-        cap.get(
-            cv2.CAP_PROP_FRAME_COUNT
-        )
-    )
-
-    fps = cap.get(
-        cv2.CAP_PROP_FPS
-    )
-
-    width = int(
-        cap.get(
-            cv2.CAP_PROP_FRAME_WIDTH
-        )
-    )
-
-    height = int(
-        cap.get(
-            cv2.CAP_PROP_FRAME_HEIGHT
-        )
-    )
-
-    # --------------------------------------------------------
-    # Calculate duration
-    # --------------------------------------------------------
-
-    if fps > 0:
-
-        duration = (
-            frame_count /
-            fps
-        )
-
-    else:
-
-        duration = 0
-
-    cap.release()
-
-    # --------------------------------------------------------
-    # Return analysis result
-    # --------------------------------------------------------
+    # Note: walking_speed, sit_to_stand, and symmetry require separate tracking algorithms. 
+    # For now, we return clinical baselines based on severity to populate the UI.
+    mock_speed = 1.2 if risk_level == "Low Risk" else 0.8
+    mock_symmetry = 95.0 if risk_level == "Low Risk" else 75.0
 
     return {
-
         "status": "success",
-
-        "filename": original_filename,
-
-        "saved_filename": unique_filename,
-
-        "video_url": f"/videos/{unique_filename}",
-
-        "video_analysis": {
-
-            "frame_count": frame_count,
-
-            "fps": round(
-                fps,
-                2
-            ),
-
-            "width": width,
-
-            "height": height,
-
-            "duration_seconds": round(
-                duration,
-                2
-            )
-        },
-
-        # Prototype result for now
-        "risk_score": 64,
-
-        "risk_level": "Moderate Risk"
+        "filename": filename,
+        "risk_level": risk_level,
+        "risk_score": round(risk_score, 1),
+        "walking_speed": mock_speed,
+        "sit_to_stand_time": 2.5,
+        "knee_flexion": 120.0, # You can extract this directly from YOLO inside inference.py later
+        "movement_symmetry": mock_symmetry
     }
 
 # ============================================================
