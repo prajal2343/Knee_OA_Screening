@@ -51,5 +51,5 @@ app.*.map.json
 local_backend/
 Knee_OA_AI_API/knee_oa.db
 Knee_OA_AI_API/uploaded_videos/
-Knee_OA_AI_API/venv/
+Knee_OA_AI_API/.venv/
 Knee_OA_AI_API/__pycache__/
