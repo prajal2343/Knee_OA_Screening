@@ -1,11 +1,12 @@
 
 from database import SessionLocal, Patient
-from fastapi import FastAPI, File, UploadFile 
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from interface import predict_gait_video
 import os
 import uuid
 import cv2
+import shutil
 
 app = FastAPI(title="Knee OA AI API")
 
